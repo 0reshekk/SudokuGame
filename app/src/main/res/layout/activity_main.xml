@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/mainLayout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp"
+    android:gravity="center">
+
+    <com.example.sudoku.SudokuGrid
+        android:id="@+id/sudokuGrid"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content" />
+
+    <!-- Выпадающий список сложности -->
+    <Spinner
+        android:id="@+id/difficultySpinner"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"/>
+
+    <!-- Кнопка генерации -->
+    <Button
+        android:id="@+id/generateButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Сгенерировать"
+        android:layout_marginTop="8dp" />
+
+    <!-- Панель кнопок с цифрами -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:orientation="horizontal"
+        android:padding="4dp">
+
+        <Button android:id="@+id/btn1" android:text="1" style="@style/DigitButton"/>
+        <Button android:id="@+id/btn2" android:text="2" style="@style/DigitButton"/>
+        <Button android:id="@+id/btn3" android:text="3" style="@style/DigitButton"/>
+        <Button android:id="@+id/btn4" android:text="4" style="@style/DigitButton"/>
+        <Button android:id="@+id/btn5" android:text="5" style="@style/DigitButton"/>
+        <Button android:id="@+id/btn6" android:text="6" style="@style/DigitButton"/>
+        <Button android:id="@+id/btn7" android:text="7" style="@style/DigitButton"/>
+        <Button android:id="@+id/btn8" android:text="8" style="@style/DigitButton"/>
+        <Button android:id="@+id/btn9" android:text="9" style="@style/DigitButton"/>
+        <Button android:id="@+id/btnErase" android:text="⌫" style="@style/DigitButton" />
+
+    </LinearLayout>
+
+    <!-- Текст с количеством оставшихся пустых -->
+    <TextView
+        android:id="@+id/remainingCount"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="Осталось чисел: 0"
+        android:textSize="16sp"
+        android:textColor="#000" />
+
+    <TextView
+        android:id="@+id/timerText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="00:00"
+        android:textSize="24sp"
+        android:textColor="#FF5722"
+        android:layout_gravity="center"
+        android:visibility="visible"
+        android:layout_marginTop="16dp"/>
+
+</LinearLayout>
+
+
