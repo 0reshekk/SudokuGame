@@ -9,19 +9,27 @@ class SudokuGenerator(private val board: SudokuBoard) {
     private val solver = SudokuSolver(board)
 
     fun generate(difficulty: Difficulty) {
-        // Шаг 1: Очистить доску
         board.clear()
 
-        // Шаг 2: Заполнить доску полностью
         fillDiagonalBoxes()
-        solver.solve()
+        solver.solve() // полностью решаем доску
 
-        // Шаг 3: Удалить клетки в зависимости от сложности
+        // сохраняем решение
+        board.setSolution(solver.getSolutionBoard())
+
         removeCells(81 - difficulty.clues)
+
+        // помечаем оставшиеся числа как фиксированные (givens)
+        for (r in 0 until 9) {
+            for (c in 0 until 9) {
+                if (board.getCell(r, c) != 0) {
+                    board.markFixed(r, c)
+                }
+            }
+        }
     }
 
     private fun fillDiagonalBoxes() {
-        // Заполнить 3 диагональных 3x3 блока случайными числами (без конфликтов)
         for (i in 0 until 9 step 3) {
             fillBox(i, i)
         }

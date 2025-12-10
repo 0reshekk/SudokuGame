@@ -21,4 +21,14 @@ class SudokuSolver(private val board: SudokuBoard) {
         }
         return true
     }
+
+    fun getSolutionBoard(): Array<IntArray> {
+        val solution = Array(board.SIZE) { IntArray(board.SIZE) }
+        for (i in 0 until board.SIZE) {
+            for (j in 0 until board.SIZE) {
+                solution[i][j] = board.getCell(i, j)
+            }
+        }
+        return solution
+    }
 }
