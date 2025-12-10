@@ -8,7 +8,6 @@ import android.view.Gravity
 import android.widget.EditText
 import android.widget.GridLayout
 import model.SudokuBoard
-
 class SudokuGrid @JvmOverloads constructor(
     context: Context, attrs: AttributeSet? = null
 ) : GridLayout(context, attrs) {
@@ -77,11 +76,12 @@ class SudokuGrid @JvmOverloads constructor(
                     isCursorVisible = false
                     isFocusable = false
                     isFocusableInTouchMode = false
+                    isClickable = true
+                    isEnabled = true
                 }
 
                 editText.setOnClickListener {
                     if (!::board.isInitialized) return@setOnClickListener
-                    if (board.isFixed(i, j)) return@setOnClickListener
                     selectedRow = i
                     selectedCol = j
                     onCellSelectedListener?.invoke(i, j)
@@ -122,6 +122,7 @@ class SudokuGrid @JvmOverloads constructor(
         when {
             row == selectedRow && col == selectedCol -> cell.setBackgroundColor(Color.parseColor("#ADD8E6"))
             highlightedDigit != -1 && value == highlightedDigit -> cell.setBackgroundColor(Color.YELLOW)
+            isFixed -> cell.setBackgroundResource(R.drawable.cell_background_fixed)
             else -> cell.setBackgroundResource(R.drawable.cell_background_normal)
         }
     }
