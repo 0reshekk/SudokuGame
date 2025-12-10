@@ -97,32 +97,48 @@ class SudokuGrid @JvmOverloads constructor(
     fun updateUI() {
         if (!::board.isInitialized) return
         for (i in 0 until SIZE) for (j in 0 until SIZE) updateCellUI(i, j)
-        if (selectedRow >= 0 && selectedCol >= 0) highlightRelatedCells(selectedRow, selectedCol)
     }
 
     private fun updateCellUI(row: Int, col: Int) {
         val cell = cells[row][col] ?: return
         val value = board.getCell(row, col)
         val isFixed = board.isFixed(row, col)
+        val solutionValue = board.getSolution(row, col)
+        val hasError = value != 0 && solutionValue != 0 && value != solutionValue && !isFixed
+        val isSelected = row == selectedRow && col == selectedCol
+        val isRelated = selectedRow >= 0 && selectedCol >= 0 && !isSelected &&
+                (row == selectedRow || col == selectedCol || (row / 3 == selectedRow / 3 && col / 3 == selectedCol / 3))
 
         if (value != 0) {
             cell.setText(value.toString())
-            cell.textSize = 24f
+            cell.textSize = 20f
             cell.setTypeface(null, Typeface.BOLD)
-            cell.setTextColor(if (isFixed) Color.parseColor("#07283F") else Color.parseColor("#085590"))
+            cell.gravity = Gravity.CENTER
+            cell.setTextColor(
+                when {
+                    hasError -> Color.RED
+                    isFixed -> Color.parseColor("#07283F")
+                    else -> Color.parseColor("#085590")
+                }
+            )
+            if (!isFixed && !hasError && value == solutionValue) board.markAutoFixed(row, col)
         } else if (isNotesMode && notes[row][col].isNotEmpty()) {
             cell.setText(formatNotes3x3(notes[row][col].sorted()))
-            cell.textSize = 12f
-            cell.setTypeface(null, Typeface.BOLD)
+            cell.textSize = 10f
+            cell.setTypeface(Typeface.MONOSPACE, Typeface.NORMAL)
+            cell.setLineSpacing(0f, 0.9f)
+            cell.gravity = Gravity.START or Gravity.TOP
             cell.setTextColor(Color.DKGRAY)
         } else {
             cell.setText("")
+            cell.gravity = Gravity.CENTER
         }
 
         when {
-            row == selectedRow && col == selectedCol -> cell.setBackgroundColor(Color.parseColor("#ADD8E6"))
-            highlightedDigit != -1 && value == highlightedDigit -> cell.setBackgroundColor(Color.YELLOW)
-            isFixed -> cell.setBackgroundResource(R.drawable.cell_background_fixed)
+            hasError -> cell.setBackgroundResource(R.drawable.cell_background_conflict)
+            isSelected -> cell.setBackgroundResource(R.drawable.cell_background_selected)
+            highlightedDigit != -1 && value == highlightedDigit -> cell.setBackgroundResource(R.drawable.cell_background_highlight)
+            isRelated -> cell.setBackgroundResource(R.drawable.cell_background_related)
             else -> cell.setBackgroundResource(R.drawable.cell_background_normal)
         }
     }
@@ -141,24 +157,6 @@ class SudokuGrid @JvmOverloads constructor(
         return sb.toString()
     }
 
-    private fun highlightRelatedCells(row: Int, col: Int) {
-        for (i in 0 until SIZE) {
-            for (j in 0 until SIZE) {
-                val cell = cells[i][j] ?: continue
-                val value = board.getCell(i, j)
-                val inRow = i == row
-                val inCol = j == col
-                val inBox = (i / 3 == row / 3) && (j / 3 == col / 3)
-
-                when {
-                    i == row && j == col -> cell.setBackgroundColor(Color.parseColor("#ADD8E6"))
-                    value != 0 && (inRow || inCol || inBox) -> cell.setBackgroundColor(Color.parseColor("#E0F0FF"))
-                    else -> cell.setBackgroundResource(R.drawable.cell_background_normal)
-                }
-            }
-        }
-    }
-
     fun setOnCellSelectedListener(listener: (row: Int, col: Int) -> Unit) {
         onCellSelectedListener = listener
     }
@@ -170,7 +168,11 @@ class SudokuGrid @JvmOverloads constructor(
 
         if (isNotesMode) toggleNote(row, col, number)
         else {
-            board.setCell(row, col, number)
+            if (number == 0) {
+                board.setCell(row, col, 0)
+            } else {
+                board.setCell(row, col, number)
+            }
             if (number != 0) notes[row][col].clear()
         }
         updateUI()
