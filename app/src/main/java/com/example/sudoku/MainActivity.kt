@@ -22,6 +22,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var remainingCountText: TextView
     private lateinit var timerTextView: TextView
     private lateinit var notesModeCheckbox: CheckBox
+    private lateinit var digitButtons: List<Button>
 
     private var startTime: Long = 0L
     private var isTimerRunning = false
@@ -61,7 +62,9 @@ class MainActivity : AppCompatActivity() {
         }
 
         val spinnerDifficulty = findViewById<Spinner>(R.id.difficultySpinner)
-        val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, Difficulty.values())
+        val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item,
+            Difficulty.entries.toTypedArray()
+        )
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         spinnerDifficulty.adapter = adapter
 
@@ -74,7 +77,7 @@ class MainActivity : AppCompatActivity() {
             timerTextView.visibility = View.VISIBLE
         }
 
-        val digitButtons = listOf(
+        digitButtons = listOf(
             findViewById<Button>(R.id.btn1),
             findViewById<Button>(R.id.btn2),
             findViewById<Button>(R.id.btn3),
@@ -84,7 +87,7 @@ class MainActivity : AppCompatActivity() {
             findViewById<Button>(R.id.btn7),
             findViewById<Button>(R.id.btn8),
             findViewById<Button>(R.id.btn9),
-            findViewById<Button>(R.id.btnErase)
+//            findViewById<Button>(R.id.btnErase)
         )
 
         digitButtons.forEachIndexed { index, button ->
@@ -93,11 +96,16 @@ class MainActivity : AppCompatActivity() {
 
                 val notesMode = notesModeCheckbox.isChecked
                 if (notesMode) {
-                    if (index in 0..8) sudokuGrid.setNumber(selectedRow, selectedCol, index + 1)
+                    when {
+                        index in 0..8 -> sudokuGrid.setNumber(selectedRow, selectedCol, index + 1)
+                        index == 9 -> sudokuGrid.clearNotes(selectedRow, selectedCol)
+                    }
                 } else {
                     val value = if (index == 9) 0 else index + 1
                     sudokuGrid.setNumber(selectedRow, selectedCol, value)
                 }
+                val currentValue = sudokuBoard.getCell(selectedRow, selectedCol)
+                sudokuGrid.highlightDigit(if (currentValue in 1..9) currentValue else -1)
                 updateRemainingCount()
             }
         }
@@ -106,6 +114,15 @@ class MainActivity : AppCompatActivity() {
     private fun updateRemainingCount() {
         val remaining = (0 until 9).sumOf { i -> (0 until 9).count { j -> sudokuBoard.getCell(i, j) == 0 } }
         remainingCountText.text = "Осталось чисел: $remaining"
+        updateInputButtons(remaining == 0)
+        if (remaining == 0) stopTimer()
+    }
+
+    private fun updateInputButtons(isBoardFull: Boolean) {
+        digitButtons.forEach { button ->
+            button.isEnabled = !isBoardFull
+            button.alpha = if (isBoardFull) 0.5f else 1f
+        }
     }
 
     private fun startTimer() {
