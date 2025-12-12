@@ -223,4 +223,17 @@ class SudokuGrid @JvmOverloads constructor(
         notes[row][col].clear()
         updateUI()
     }
+    fun getNotes(row: Int, col: Int): Set<Int> {
+        if (row !in 0 until size || col !in 0 until size) return emptySet()
+        return notes[row][col].toSet()
+    }
+
+    fun clearAllNotes() {
+        for (i in 0 until size) {
+            for (j in 0 until size) {
+                notes[i][j].clear()
+            }
+        }
+        updateUI()
+    }
 }
