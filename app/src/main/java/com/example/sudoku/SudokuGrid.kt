@@ -105,6 +105,17 @@ class SudokuGrid @JvmOverloads constructor(
         }
     }
 
+    fun applyState(row: Int, col: Int, value: Int, notesSet: Set<Int>) {
+        if (!::board.isInitialized) return
+        if (row !in 0 until size || col !in 0 until size) return
+        if (board.isFixed(row, col)) return
+
+        board.setCell(row, col, value)
+        notes[row][col].clear()
+        notes[row][col].addAll(notesSet)
+        updateCellUI(row, col)
+    }
+
     fun updateUI() {
         if (!::board.isInitialized) return
         for (i in 0 until size) for (j in 0 until size) updateCellUI(i, j)

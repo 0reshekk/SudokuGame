@@ -59,4 +59,28 @@ class SudokuBoard {
     }
 
     fun getSolution(row: Int, col: Int): Int = solutionBoard[row][col]
+
+    fun getBoardCopy(): Array<IntArray> = Array(SIZE) { row -> board[row].clone() }
+
+    fun getSolutionCopy(): Array<IntArray> = Array(SIZE) { row -> solutionBoard[row].clone() }
+
+    fun getFixedCopy(): Array<BooleanArray> = Array(SIZE) { row -> fixed[row].clone() }
+
+    fun getAutoFixedCopy(): Array<BooleanArray> = Array(SIZE) { row -> autoFixed[row].clone() }
+
+    fun restoreState(
+        boardData: Array<IntArray>,
+        solutionData: Array<IntArray>,
+        fixedData: Array<BooleanArray>,
+        autoFixedData: Array<BooleanArray>
+    ) {
+        for (i in 0 until SIZE) {
+            for (j in 0 until SIZE) {
+                board[i][j] = boardData.getOrNull(i)?.getOrNull(j) ?: 0
+                solutionBoard[i][j] = solutionData.getOrNull(i)?.getOrNull(j) ?: 0
+                fixed[i][j] = fixedData.getOrNull(i)?.getOrNull(j) ?: false
+                autoFixed[i][j] = autoFixedData.getOrNull(i)?.getOrNull(j) ?: false
+            }
+        }
+    }
 }
