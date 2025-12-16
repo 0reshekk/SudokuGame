@@ -1,6 +1,6 @@
 package utils
 
-import com.example.sudoku.SudokuGrid
+import sudoku.SudokuGrid
 import model.SudokuBoard
 
 class GameHistory(private val board: SudokuBoard, private val grid: SudokuGrid) {

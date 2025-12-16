@@ -1,4 +1,4 @@
-package com.example.sudoku
+package sudoku
 
 import android.annotation.SuppressLint
 import android.content.SharedPreferences
@@ -13,12 +13,15 @@ import android.widget.CheckBox
 import android.widget.GridLayout
 import android.widget.ImageButton
 import android.widget.LinearLayout
+import android.widget.RadioButton
+import android.widget.RadioGroup
 import android.widget.TextView
 import android.widget.ToggleButton
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
+import com.example.sudoku.R
 import logic.SudokuGenerator
 import model.SudokuBoard
 import utils.Difficulty
@@ -370,10 +373,10 @@ class MainActivity : AppCompatActivity() {
 
     private fun showSettingsDialog() {
         val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_settings, null)
-        val themeGroup = dialogView.findViewById<android.widget.RadioGroup>(R.id.themeGroup)
-        val themeLight = dialogView.findViewById<android.widget.RadioButton>(R.id.themeLight)
-        val themeDark = dialogView.findViewById<android.widget.RadioButton>(R.id.themeDark)
-        val themeSystem = dialogView.findViewById<android.widget.RadioButton>(R.id.themeSystem)
+        val themeGroup = dialogView.findViewById<RadioGroup>(R.id.themeGroup)
+        val themeLight = dialogView.findViewById<RadioButton>(R.id.themeLight)
+        val themeDark = dialogView.findViewById<RadioButton>(R.id.themeDark)
+        val themeSystem = dialogView.findViewById<RadioButton>(R.id.themeSystem)
         val livesCheckbox = dialogView.findViewById<CheckBox>(R.id.livesModeCheckbox)
         val showRulesButton = dialogView.findViewById<Button>(R.id.showRulesButton)
 

@@ -1,4 +1,4 @@
-package com.example.sudoku
+package sudoku
 
 import android.content.Context
 import android.graphics.Color
@@ -12,6 +12,7 @@ import android.widget.EditText
 import android.widget.GridLayout
 import model.SudokuBoard
 import androidx.core.graphics.toColorInt
+import com.example.sudoku.R
 
 class SudokuGrid @JvmOverloads constructor(
     context: Context, attrs: AttributeSet? = null
@@ -62,8 +63,8 @@ class SudokuGrid @JvmOverloads constructor(
             for (j in 0 until size) {
                 val editText = EditText(context).apply {
                     layoutParams = LayoutParams(
-                        GridLayout.spec(i, 1f),
-                        GridLayout.spec(j, 1f)
+                        spec(i, 1f),
+                        spec(j, 1f)
                     ).apply {
                         width = 0
                         height = 0
