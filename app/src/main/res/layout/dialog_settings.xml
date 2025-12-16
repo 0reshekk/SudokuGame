@@ -33,12 +33,6 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Темная" />
-
-            <RadioButton
-                android:id="@+id/themeSystem"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Системная" />
         </RadioGroup>
 
         <TextView

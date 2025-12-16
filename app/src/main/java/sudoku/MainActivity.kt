@@ -219,6 +219,7 @@ class MainActivity : AppCompatActivity() {
         updateContinueButtonState()
     }
 
+    @SuppressLint("SetTextI18n")
     private fun updateDifficultyLabel() {
         difficultyButton.text = "Сложность: ${formatDifficulty(selectedDifficulty)}"
     }
@@ -256,6 +257,7 @@ class MainActivity : AppCompatActivity() {
         startTimer(saved.elapsedSeconds)
     }
 
+    @SuppressLint("SetTextI18n")
     private fun handleGameMetrics(metrics: GameMetrics) {
         remainingCountText.text = "Осталось чисел: ${metrics.remainingCells}"
         updateInputButtons(metrics.isBoardFull, metrics.digitCounts)
@@ -309,7 +311,7 @@ class MainActivity : AppCompatActivity() {
             .setTitle("Выбор сложности")
             .setSingleChoiceItems(titles, selectedIndex) { dialog, which ->
                 selectedDifficulty = items[which]
-                prefs.edit().putString("selected_difficulty", selectedDifficulty.name).apply()
+                prefs.edit { putString("selected_difficulty", selectedDifficulty.name) }
                 updateDifficultyLabel()
                 dialog.dismiss()
             }
@@ -322,14 +324,12 @@ class MainActivity : AppCompatActivity() {
         val themeGroup = dialogView.findViewById<RadioGroup>(R.id.themeGroup)
         val themeLight = dialogView.findViewById<RadioButton>(R.id.themeLight)
         val themeDark = dialogView.findViewById<RadioButton>(R.id.themeDark)
-        val themeSystem = dialogView.findViewById<RadioButton>(R.id.themeSystem)
         val livesCheckbox = dialogView.findViewById<CheckBox>(R.id.livesModeCheckbox)
         val showRulesButton = dialogView.findViewById<Button>(R.id.showRulesButton)
 
         when (prefs.getInt("theme_mode", AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)) {
             AppCompatDelegate.MODE_NIGHT_NO -> themeLight.isChecked = true
             AppCompatDelegate.MODE_NIGHT_YES -> themeDark.isChecked = true
-            else -> themeSystem.isChecked = true
         }
 
         livesCheckbox.isChecked = livesModeEnabled
@@ -344,12 +344,12 @@ class MainActivity : AppCompatActivity() {
                     R.id.themeDark -> AppCompatDelegate.MODE_NIGHT_YES
                     else -> AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM
                 }
-                prefs.edit().putInt("theme_mode", selectedMode).apply()
+                prefs.edit { putInt("theme_mode", selectedMode) }
                 AppCompatDelegate.setDefaultNightMode(selectedMode)
 
                 livesModeEnabled = livesCheckbox.isChecked
                 gameController.setLivesMode(livesModeEnabled)
-                prefs.edit().putBoolean("lives_mode", livesModeEnabled).apply()
+                prefs.edit { putBoolean("lives_mode", livesModeEnabled) }
                 updateLivesUI()
                 saveGameState()
                 Toast.makeText(this, "Настройки сохранены", Toast.LENGTH_SHORT).show()
@@ -412,9 +412,9 @@ class MainActivity : AppCompatActivity() {
 
     private fun updateBestResultsUI() {
         val difficultyViews = mapOf(
-            Difficulty.ЛЕГКИЙ to findViewById<TextView>(R.id.bestEasy),
-            Difficulty.СРЕДНИЙ to findViewById<TextView>(R.id.bestMedium),
-            Difficulty.СЛОЖНЫЙ to findViewById<TextView>(R.id.bestHard),
+            Difficulty.ЛЕГКИЙ to findViewById(R.id.bestEasy),
+            Difficulty.СРЕДНИЙ to findViewById(R.id.bestMedium),
+            Difficulty.СЛОЖНЫЙ to findViewById(R.id.bestHard),
             Difficulty.ЭКСТРИМ to findViewById<TextView>(R.id.bestExtreme)
         )
 
@@ -431,6 +431,7 @@ class MainActivity : AppCompatActivity() {
         return String.format(Locale.getDefault(), "%02d:%02d", minutes, remainder)
     }
 
+    @SuppressLint("SetTextI18n")
     private fun updateLivesUI() {
         if (gameController.livesModeEnabled) {
             livesTextView.visibility = View.VISIBLE
@@ -459,6 +460,7 @@ class MainActivity : AppCompatActivity() {
         updateContinueButtonState()
     }
 
+    @SuppressLint("SetTextI18n")
     private fun handleWin() {
         val elapsedSeconds = gameTimer.elapsedSeconds()
         gameController.markGameOver()
