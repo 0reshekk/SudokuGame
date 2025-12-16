@@ -3,8 +3,6 @@ package sudoku
 import android.annotation.SuppressLint
 import android.content.SharedPreferences
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
 import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
@@ -16,25 +14,30 @@ import android.widget.LinearLayout
 import android.widget.RadioButton
 import android.widget.RadioGroup
 import android.widget.TextView
-import android.widget.ToggleButton
 import android.widget.Toast
+import android.widget.ToggleButton
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import com.example.sudoku.R
 import logic.SudokuGenerator
 import model.SudokuBoard
+import state.GameController
+import state.GameMetrics
+import state.GameStateManager
 import utils.Difficulty
+import utils.GameHistory
+import utils.GameTimer
 import java.util.Locale
+import androidx.core.content.edit
+import androidx.core.view.isVisible
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var sudokuBoard: SudokuBoard
     private lateinit var sudokuGrid: SudokuGrid
     private lateinit var generator: SudokuGenerator
-
-    private var selectedRow = -1
-    private var selectedCol = -1
+    private lateinit var gameController: GameController
 
     private lateinit var remainingCountText: TextView
     private lateinit var timerTextView: TextView
@@ -54,36 +57,27 @@ class MainActivity : AppCompatActivity() {
     private lateinit var menuContainer: LinearLayout
     private lateinit var gameContainer: View
     private lateinit var startGameButton: Button
+    private lateinit var continueGameButton: Button
     private lateinit var difficultyButton: Button
     private lateinit var menuSettingsButton: Button
     private lateinit var livesTextView: TextView
     private lateinit var loseOverlay: View
 
     private lateinit var prefs: SharedPreferences
+    private lateinit var stateManager: GameStateManager
+    private lateinit var gameTimer: GameTimer
     private var selectedDifficulty: Difficulty = Difficulty.ЛЕГКИЙ
     private var hasReadRules: Boolean = false
     private var livesModeEnabled: Boolean = true
-    private var hasChanges: Boolean = false
-    private var livesRemaining: Int = 0
-    private var gameOver: Boolean = false
-
-    private var startTime: Long = 0L
-    private var accumulatedSeconds: Long = 0L
-    private var isTimerRunning = false
-    private val handler = Handler(Looper.getMainLooper())
     private var isPaused: Boolean = false
-
-    private val timerRunnable = object : Runnable {
-        override fun run() {
-            timerTextView.text = formatTime(getElapsedSeconds())
-            if (isTimerRunning) handler.postDelayed(this, 1000)
-        }
-    }
 
     @SuppressLint("ClickableViewAccessibility")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         prefs = getSharedPreferences("sudoku_prefs", MODE_PRIVATE)
+        stateManager = GameStateManager(prefs)
+        gameTimer = GameTimer { seconds -> timerTextView.text = formatTime(seconds) }
+
         AppCompatDelegate.setDefaultNightMode(
             prefs.getInt(
                 "theme_mode",
@@ -101,6 +95,13 @@ class MainActivity : AppCompatActivity() {
         sudokuBoard = SudokuBoard()
         generator = SudokuGenerator(sudokuBoard)
         sudokuGrid = findViewById(R.id.sudokuGrid)
+        gameController = GameController(
+            sudokuBoard,
+            sudokuGrid,
+            generator,
+            GameHistory(sudokuBoard, sudokuGrid)
+        )
+
         remainingCountText = findViewById(R.id.remainingCount)
         timerTextView = findViewById(R.id.timerText)
         notesToggle = findViewById(R.id.notesToggle)
@@ -118,6 +119,7 @@ class MainActivity : AppCompatActivity() {
         menuContainer = findViewById(R.id.menuContainer)
         gameContainer = findViewById(R.id.gameContainer)
         startGameButton = findViewById(R.id.startGameButton)
+        continueGameButton = findViewById(R.id.continueGameButton)
         difficultyButton = findViewById(R.id.difficultyButton)
         menuSettingsButton = findViewById(R.id.menuSettingsButton)
         livesTextView = findViewById(R.id.livesText)
@@ -126,10 +128,7 @@ class MainActivity : AppCompatActivity() {
         sudokuGrid.setSudokuBoard(sudokuBoard)
 
         sudokuGrid.setOnCellSelectedListener { row, col ->
-            selectedRow = row
-            selectedCol = col
-            val value = sudokuBoard.getCell(row, col)
-            sudokuGrid.highlightDigit(if (value in 1..9) value else -1)
+            gameController.selectCell(row, col)
         }
 
         notesToggle.setOnCheckedChangeListener { _, isChecked ->
@@ -138,11 +137,17 @@ class MainActivity : AppCompatActivity() {
         }
 
         findViewById<Button>(R.id.eraseButton).setOnClickListener {
-            eraseSelectedCell()
+            gameController.eraseSelectedCell()?.let { metrics ->
+                handleGameMetrics(metrics)
+                saveGameState()
+            }
         }
 
         findViewById<Button>(R.id.undoButton).setOnClickListener {
-            clearSelection()
+            gameController.undo()?.let { metrics ->
+                handleGameMetrics(metrics)
+                saveGameState()
+            }
         }
 
         digitButtons = findViewById<GridLayout>(R.id.numberPad).let { grid ->
@@ -153,9 +158,13 @@ class MainActivity : AppCompatActivity() {
             button.setOnTouchListener { _, event ->
                 when (event.action) {
                     MotionEvent.ACTION_DOWN -> {
-                        handleDigitInput(index)
+                        gameController.handleDigitInput(index, notesToggle.isChecked, ::onMistake)?.let { metrics ->
+                            handleGameMetrics(metrics)
+                            saveGameState()
+                        }
                         true
                     }
+
                     MotionEvent.ACTION_UP -> true
                     else -> false
                 }
@@ -164,9 +173,10 @@ class MainActivity : AppCompatActivity() {
 
         startGameButton.setOnClickListener {
             startGameButton.visibility = View.GONE
-            openGameScreen()
             startNewGame()
         }
+
+        continueGameButton.setOnClickListener { continueSavedGame() }
 
         difficultyButton.setOnClickListener { showDifficultyDialog() }
         menuSettingsButton.setOnClickListener { showSettingsDialog() }
@@ -178,13 +188,17 @@ class MainActivity : AppCompatActivity() {
 
         pauseButton.setOnClickListener { togglePause() }
         resumeButton.setOnClickListener { togglePause() }
-        returnToMenuButton.setOnClickListener { exitToMenu() }
+        returnToMenuButton.setOnClickListener {
+            loseOverlay.visibility = View.GONE
+            exitToMenu()
+        }
         winOkButton.setOnClickListener { exitToMenu() }
         settingsButton.setOnClickListener { showSettingsDialog() }
         helpButton.setOnClickListener { showRulesDialog() }
         helpButton.visibility = if (hasReadRules) View.GONE else View.VISIBLE
 
         updateBestResultsUI()
+        updateContinueButtonState()
     }
 
     private fun openGameScreen() {
@@ -202,6 +216,7 @@ class MainActivity : AppCompatActivity() {
         pauseOverlay.visibility = View.GONE
         loseOverlay.visibility = View.GONE
         isPaused = false
+        updateContinueButtonState()
     }
 
     private fun updateDifficultyLabel() {
@@ -214,74 +229,37 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun startNewGame() {
-        generator.generate(selectedDifficulty)
-        sudokuGrid.updateUI()
-        sudokuGrid.highlightDigit(-1)
-        selectedRow = -1
-        selectedCol = -1
-        updateRemainingCount()
-        startTimer(reset = true)
-        hasChanges = false
-        pauseButton.setImageResource(android.R.drawable.ic_media_pause)
-        gameOver = false
-        livesRemaining = if (livesModeEnabled) 3 else 0
+        openGameScreen()
+        val metrics = gameController.startNewGame(selectedDifficulty, livesModeEnabled)
+        resetOverlays()
         updateLivesUI()
-        loseOverlay.visibility = View.GONE
-        pauseOverlay.visibility = View.GONE
-        winOverlay.visibility = View.GONE
-        winRecordText.visibility = View.GONE
-        winLivesText.visibility = View.GONE
+        handleGameMetrics(metrics)
+        startTimer(0L)
+        saveGameState()
     }
 
-    private fun eraseSelectedCell() {
-        if (selectedRow !in 0..8 || selectedCol !in 0..8) return
-        val beforeValue = sudokuBoard.getCell(selectedRow, selectedCol)
-        val beforeNotes = sudokuGrid.getNotes(selectedRow, selectedCol)
-
-        sudokuGrid.setNumber(selectedRow, selectedCol, 0)
-        sudokuGrid.clearNotes(selectedRow, selectedCol)
-        sudokuGrid.highlightDigit(-1)
-        updateRemainingCount()
-        markIfChanged(beforeValue, beforeNotes)
-    }
-
-    private fun clearSelection() {
-        selectedRow = -1
-        selectedCol = -1
-        sudokuGrid.highlightDigit(-1)
-        sudokuGrid.updateUI()
-    }
-
-    private fun updateRemainingCount() {
-        val remaining = (0 until 9).sumOf { i -> (0 until 9).count { j -> sudokuBoard.getCell(i, j) == 0 } }
-        remainingCountText.text = "Осталось чисел: $remaining"
-        updateInputButtons(remaining == 0, countDigits())
-        if (remaining == 0 && !gameOver) handleWin()
-    }
-
-    private fun handleDigitInput(index: Int) {
-        if (gameOver || selectedRow !in 0..8 || selectedCol !in 0..8) return
-
-        val notesMode = notesToggle.isChecked
-        val beforeValue = sudokuBoard.getCell(selectedRow, selectedCol)
-        val beforeNotes = sudokuGrid.getNotes(selectedRow, selectedCol)
-        if (notesMode) {
-            when {
-                index in 0..8 -> sudokuGrid.setNumber(selectedRow, selectedCol, index + 1)
-                index == 9 -> sudokuGrid.clearNotes(selectedRow, selectedCol)
-            }
-        } else {
-            val value = if (index == 9) 0 else index + 1
-            sudokuGrid.setNumber(selectedRow, selectedCol, value)
-            val solutionValue = sudokuBoard.getSolution(selectedRow, selectedCol)
-            if (value != 0 && solutionValue != 0 && value != solutionValue) {
-                recordMistake()
-            }
+    private fun continueSavedGame() {
+        val saved = stateManager.load()
+        if (saved == null) {
+            Toast.makeText(this, "Нет сохранённой игры для продолжения", Toast.LENGTH_SHORT).show()
+            updateContinueButtonState()
+            return
         }
-        val currentValue = sudokuBoard.getCell(selectedRow, selectedCol)
-        sudokuGrid.highlightDigit(if (currentValue in 1..9) currentValue else -1)
-        updateRemainingCount()
-        markIfChanged(beforeValue, beforeNotes)
+        openGameScreen()
+        selectedDifficulty = saved.difficulty
+        livesModeEnabled = saved.livesModeEnabled
+        updateDifficultyLabel()
+        val metrics = gameController.restoreFrom(saved)
+        resetOverlays()
+        updateLivesUI()
+        handleGameMetrics(metrics)
+        startTimer(saved.elapsedSeconds)
+    }
+
+    private fun handleGameMetrics(metrics: GameMetrics) {
+        remainingCountText.text = "Осталось чисел: ${metrics.remainingCells}"
+        updateInputButtons(metrics.isBoardFull, metrics.digitCounts)
+        if (metrics.isBoardFull && !gameController.gameOver) handleWin()
     }
 
     private fun updateInputButtons(isBoardFull: Boolean, digitCounts: IntArray) {
@@ -293,36 +271,14 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun countDigits(): IntArray {
-        val counts = IntArray(9)
-        for (i in 0 until 9) {
-            for (j in 0 until 9) {
-                val value = sudokuBoard.getCell(i, j)
-                if (value in 1..9) counts[value - 1]++
-            }
-        }
-        return counts
-    }
-
-    private fun startTimer(reset: Boolean) {
-        if (reset) {
-            accumulatedSeconds = 0L
-        } else {
-            accumulatedSeconds = getElapsedSeconds()
-        }
-        startTime = System.currentTimeMillis()
-        isTimerRunning = true
-        handler.post(timerRunnable)
-    }
-
     private fun togglePause() {
-        if (gameOver) return
-        if (!isTimerRunning && !isPaused) return
+        if (gameController.gameOver) return
+        if (!gameTimer.isActive() && !isPaused) return
 
         if (isPaused) {
             pauseOverlay.visibility = View.GONE
             isPaused = false
-            startTimer(reset = false)
+            startTimer(gameTimer.elapsedSeconds())
             pauseButton.setImageResource(android.R.drawable.ic_media_pause)
         } else {
             pauseTimer()
@@ -333,25 +289,15 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun pauseTimer() {
-        if (!isTimerRunning) return
-        accumulatedSeconds = getElapsedSeconds()
-        isTimerRunning = false
-        handler.removeCallbacks(timerRunnable)
+        gameTimer.pause()
     }
 
     private fun stopTimer() {
-        accumulatedSeconds = getElapsedSeconds()
-        isTimerRunning = false
-        handler.removeCallbacks(timerRunnable)
+        gameTimer.stop()
     }
 
-    private fun getElapsedSeconds(): Long {
-        val now = System.currentTimeMillis()
-        return if (isTimerRunning) {
-            accumulatedSeconds + (now - startTime) / 1000
-        } else {
-            accumulatedSeconds
-        }
+    private fun startTimer(resetSeconds: Long) {
+        gameTimer.start(resetSeconds)
     }
 
     private fun showDifficultyDialog() {
@@ -402,9 +348,10 @@ class MainActivity : AppCompatActivity() {
                 AppCompatDelegate.setDefaultNightMode(selectedMode)
 
                 livesModeEnabled = livesCheckbox.isChecked
-                livesRemaining = if (livesModeEnabled) 3 else 0
+                gameController.setLivesMode(livesModeEnabled)
                 prefs.edit().putBoolean("lives_mode", livesModeEnabled).apply()
                 updateLivesUI()
+                saveGameState()
                 Toast.makeText(this, "Настройки сохранены", Toast.LENGTH_SHORT).show()
             }
             .setNegativeButton("Отмена", null)
@@ -418,6 +365,7 @@ class MainActivity : AppCompatActivity() {
         dialog.show()
     }
 
+    @SuppressLint("UseKtx")
     private fun showRulesDialog() {
         AlertDialog.Builder(this)
             .setTitle("Правила игры")
@@ -427,7 +375,7 @@ class MainActivity : AppCompatActivity() {
             .setPositiveButton("Понятно") { dialog, _ ->
                 if (!hasReadRules) {
                     hasReadRules = true
-                    prefs.edit().putBoolean("help_read", true).apply()
+                    prefs.edit { putBoolean("help_read", true) }
                     helpButton.visibility = View.GONE
                 }
                 dialog.dismiss()
@@ -436,24 +384,29 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun handleBackNavigation() {
-        if (hasChanges) {
-            AlertDialog.Builder(this)
-                .setMessage("Вы действительно хотите выйти в главное меню? Несохраненные изменения будут потеряны.")
-                .setPositiveButton("Да") { _, _ ->
-                    exitToMenu()
-                }
-                .setNegativeButton("Нет", null)
-                .show()
-        } else {
-            exitToMenu()
+        if (gameContainer.visibility != View.VISIBLE) {
+            finish()
+            return
         }
+        AlertDialog.Builder(this)
+            .setMessage("Вы действительно хотите выйти в главное меню? Прогресс можно сохранить.")
+            .setPositiveButton("Выйти без сохранения") { _, _ ->
+                stateManager.clear()
+                exitToMenu()
+            }
+            .setNegativeButton("Отмена", null)
+            .setNeutralButton("Сохранить игру") { _, _ ->
+                saveGameState()
+                exitToMenu()
+            }
+            .show()
     }
 
     private fun exitToMenu() {
         pauseTimer()
         sudokuGrid.clearAllNotes()
         notesToggle.isChecked = false
-        hasChanges = false
+        gameController.clearSelection()
         showMenu()
     }
 
@@ -479,36 +432,36 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun updateLivesUI() {
-        if (livesModeEnabled) {
+        if (gameController.livesModeEnabled) {
             livesTextView.visibility = View.VISIBLE
-            val hearts = if (livesRemaining > 0) "❤".repeat(livesRemaining.coerceAtLeast(0)) else "—"
+            val hearts = if (gameController.livesRemaining > 0) "❤".repeat(gameController.livesRemaining.coerceAtLeast(0)) else "—"
             livesTextView.text = "Жизни: $hearts"
         } else {
             livesTextView.visibility = View.GONE
         }
     }
 
-    private fun recordMistake() {
-        if (!livesModeEnabled || gameOver) return
-        livesRemaining--
-        updateLivesUI()
-        if (livesRemaining <= 0) {
+    private fun onMistake() {
+        if (gameController.loseLife()) {
             loseGame()
+        } else {
+            updateLivesUI()
         }
     }
 
     private fun loseGame() {
-        gameOver = true
+        gameController.markGameOver()
         stopTimer()
         pauseOverlay.visibility = View.GONE
         loseOverlay.visibility = View.VISIBLE
         winOverlay.visibility = View.GONE
-        hasChanges = false
+        stateManager.clear()
+        updateContinueButtonState()
     }
 
     private fun handleWin() {
-        val elapsedSeconds = getElapsedSeconds()
-        gameOver = true
+        val elapsedSeconds = gameTimer.elapsedSeconds()
+        gameController.markGameOver()
         stopTimer()
         pauseOverlay.visibility = View.GONE
         loseOverlay.visibility = View.GONE
@@ -517,14 +470,14 @@ class MainActivity : AppCompatActivity() {
         val previous = prefs.getLong(bestKey, -1)
         val isRecord = previous == -1L || elapsedSeconds < previous
         if (isRecord) {
-            prefs.edit().putLong(bestKey, elapsedSeconds).apply()
+            prefs.edit { putLong(bestKey, elapsedSeconds) }
             updateBestResultsUI()
         }
 
         winTimeText.text = "ВАШ РЕЗУЛЬТАТ: ${formatTime(elapsedSeconds)}"
         winRecordText.visibility = if (isRecord) View.VISIBLE else View.GONE
-        if (livesModeEnabled) {
-            val hearts = if (livesRemaining > 0) "❤".repeat(livesRemaining.coerceAtLeast(0)) else "—"
+        if (gameController.livesModeEnabled) {
+            val hearts = if (gameController.livesRemaining > 0) "❤".repeat(gameController.livesRemaining.coerceAtLeast(0)) else "—"
             winLivesText.visibility = View.VISIBLE
             winLivesText.text = "ВАШИ ЖИЗНИ: $hearts"
         } else {
@@ -532,27 +485,46 @@ class MainActivity : AppCompatActivity() {
         }
 
         winOverlay.visibility = View.VISIBLE
-        hasChanges = false
+        stateManager.clear()
+        updateContinueButtonState()
     }
 
     override fun onPause() {
         super.onPause()
-        stopTimer()
+        pauseTimer()
+        saveGameState()
     }
 
     override fun onBackPressed() {
-        if (gameContainer.visibility == View.VISIBLE) {
+        if (gameContainer.isVisible) {
             handleBackNavigation()
         } else {
             super.onBackPressed()
         }
     }
 
-    private fun markIfChanged(beforeValue: Int, beforeNotes: Set<Int>) {
-        val afterValue = sudokuBoard.getCell(selectedRow, selectedCol)
-        val afterNotes = sudokuGrid.getNotes(selectedRow, selectedCol)
-        if (beforeValue != afterValue || beforeNotes != afterNotes) {
-            hasChanges = true
+    private fun resetOverlays() {
+        pauseOverlay.visibility = View.GONE
+        loseOverlay.visibility = View.GONE
+        winOverlay.visibility = View.GONE
+        winRecordText.visibility = View.GONE
+        winLivesText.visibility = View.GONE
+    }
+
+    private fun saveGameState() {
+        if (gameContainer.visibility != View.VISIBLE || gameController.gameOver) {
+            stateManager.clear()
+            updateContinueButtonState()
+            return
         }
+        val state = gameController.buildGameState(selectedDifficulty, gameTimer.elapsedSeconds())
+        stateManager.save(state)
+        updateContinueButtonState()
+    }
+
+    private fun updateContinueButtonState() {
+        val hasState = stateManager.hasSavedState()
+        continueGameButton.isEnabled = hasState
+        continueGameButton.alpha = if (hasState) 1f else 0.5f
     }
 }
