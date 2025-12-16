@@ -105,6 +105,22 @@ class SudokuGrid @JvmOverloads constructor(
         }
     }
 
+    fun getNotesSnapshot(): Array<Array<Set<Int>>> {
+        return Array(size) { row ->
+            Array(size) { col -> notes[row][col].toSet() }
+        }
+    }
+
+    fun applyNotesSnapshot(notesSnapshot: Array<Array<Set<Int>>>) {
+        if (!::board.isInitialized) return
+        for (i in 0 until size) {
+            for (j in 0 until size) {
+                notes[i][j].clear()
+                notes[i][j].addAll(notesSnapshot.getOrNull(i)?.getOrNull(j) ?: emptySet())
+            }
+        }
+        updateUI()
+    }
     fun applyState(row: Int, col: Int, value: Int, notesSet: Set<Int>) {
         if (!::board.isInitialized) return
         if (row !in 0 until size || col !in 0 until size) return
