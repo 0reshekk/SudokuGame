@@ -15,7 +15,6 @@ import android.widget.RadioButton
 import android.widget.RadioGroup
 import android.widget.TextView
 import android.widget.Toast
-import android.widget.ToggleButton
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
@@ -41,7 +40,7 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var remainingCountText: TextView
     private lateinit var timerTextView: TextView
-    private lateinit var notesToggle: ToggleButton
+    private lateinit var notesToggle: ImageButton
     private lateinit var digitButtons: List<Button>
     private lateinit var pauseOverlay: View
     private lateinit var resumeButton: Button
@@ -54,6 +53,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var helpButton: ImageButton
     private lateinit var settingsButton: ImageButton
     private lateinit var pauseButton: ImageButton
+    private var notesModeEnabled = false
     private lateinit var menuContainer: LinearLayout
     private lateinit var gameContainer: View
     private lateinit var startGameButton: Button
@@ -131,19 +131,17 @@ class MainActivity : AppCompatActivity() {
             gameController.selectCell(row, col)
         }
 
-        notesToggle.setOnCheckedChangeListener { _, isChecked ->
-            sudokuGrid.setNotesMode(isChecked)
-            sudokuGrid.updateUI()
-        }
+        notesToggle.setOnClickListener { toggleNotesMode() }
+        setNotesMode(false)
 
-        findViewById<Button>(R.id.eraseButton).setOnClickListener {
+        findViewById<ImageButton>(R.id.eraseButton).setOnClickListener {
             gameController.eraseSelectedCell()?.let { metrics ->
                 handleGameMetrics(metrics)
                 saveGameState()
             }
         }
 
-        findViewById<Button>(R.id.undoButton).setOnClickListener {
+        findViewById<ImageButton>(R.id.undoButton).setOnClickListener {
             gameController.undo()?.let { metrics ->
                 handleGameMetrics(metrics)
                 saveGameState()
@@ -158,7 +156,7 @@ class MainActivity : AppCompatActivity() {
             button.setOnTouchListener { _, event ->
                 when (event.action) {
                     MotionEvent.ACTION_DOWN -> {
-                        gameController.handleDigitInput(index, notesToggle.isChecked, ::onMistake)?.let { metrics ->
+                        gameController.handleDigitInput(index, notesModeEnabled, ::onMistake)?.let { metrics ->
                             handleGameMetrics(metrics)
                             saveGameState()
                         }
@@ -405,9 +403,20 @@ class MainActivity : AppCompatActivity() {
     private fun exitToMenu() {
         pauseTimer()
         sudokuGrid.clearAllNotes()
-        notesToggle.isChecked = false
+        setNotesMode(false)
         gameController.clearSelection()
         showMenu()
+    }
+    private fun toggleNotesMode() {
+        setNotesMode(!notesModeEnabled)
+    }
+
+    private fun setNotesMode(enabled: Boolean) {
+        notesModeEnabled = enabled
+        notesToggle.isSelected = enabled
+        notesToggle.imageAlpha = if (enabled) 255 else 120
+        sudokuGrid.setNotesMode(enabled)
+        sudokuGrid.updateUI()
     }
 
     private fun updateBestResultsUI() {

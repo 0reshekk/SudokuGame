@@ -118,7 +118,10 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:layout_marginEnd="8dp"
-                android:text="Продолжить" />
+                android:background="@drawable/menu_button_background"
+                android:contentDescription="Продолжить"
+                android:text="Продолжить"
+                android:textColor="@android:color/white" />
 
             <Button
                 android:id="@+id/startGameButton"
@@ -126,14 +129,20 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:layout_marginEnd="8dp"
-                android:text="Новая игра" />
+                android:background="@drawable/menu_button_background"
+                android:contentDescription="Новая игра"
+                android:text="Новая игра"
+                android:textColor="@android:color/white" />
 
             <Button
                 android:id="@+id/difficultyButton"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="Сложность" />
+                android:background="@drawable/menu_button_background"
+                android:contentDescription="Сложность"
+                android:text="Сложность"
+                android:textColor="@android:color/white" />
         </LinearLayout>
 
         <Button
@@ -141,7 +150,9 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
-            android:text="Настройки" />
+            android:background="@drawable/menu_button_background"
+            android:text="Настройки"
+            android:textColor="@android:color/white" />
     </LinearLayout>
 
     <FrameLayout
@@ -272,29 +283,40 @@
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent">
 
-                <Button
+                <ImageButton
                     android:id="@+id/undoButton"
                     android:layout_width="0dp"
-                    android:layout_height="wrap_content"
+                    android:layout_height="48dp"
                     android:layout_weight="1"
-                    android:text="Отменить" />
+                    android:background="@android:color/transparent"
+                    android:contentDescription="Отменить"
+                    android:padding="8dp"
+                    android:scaleType="centerInside"
+                    android:src="@android:drawable/ic_menu_revert" />
 
-                <Button
+                <ImageButton
                     android:id="@+id/eraseButton"
                     android:layout_width="0dp"
-                    android:layout_height="wrap_content"
+                    android:layout_height="48dp"
                     android:layout_marginStart="8dp"
                     android:layout_weight="1"
-                    android:text="Стереть" />
+                    android:background="@android:color/transparent"
+                    android:contentDescription="Стереть"
+                    android:padding="8dp"
+                    android:scaleType="centerInside"
+                    android:src="@android:drawable/ic_menu_delete" />
 
-                <ToggleButton
+                <ImageButton
                     android:id="@+id/notesToggle"
                     android:layout_width="0dp"
-                    android:layout_height="wrap_content"
+                    android:layout_height="48dp"
                     android:layout_marginStart="8dp"
                     android:layout_weight="1"
-                    android:textOn="Заметки"
-                    android:textOff="Заметки" />
+                    android:background="@drawable/notes_toggle_background"
+                    android:contentDescription="Заметки"
+                    android:padding="10dp"
+                    android:scaleType="centerInside"
+                    android:src="@android:drawable/ic_menu_edit" />
             </LinearLayout>
 
             <GridLayout
