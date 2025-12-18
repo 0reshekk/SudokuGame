@@ -30,7 +30,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:padding="8dp"
-            android:text="Заполните сетку 9x9 цифрами от 1 до 9 \nтак, чтобы в каждой строке, столбце и каждом квадрате 3x3 каждая цифра встречалась только один раз.
+            android:text="Заполните сетку 9x9 цифрами от 1 до 9 так, чтобы в каждой строке, столбце и каждом квадрате 3x3 каждая цифра встречалась только один раз.
             \n\nИспользуйте заметки для черновых чисел."
             android:textAppearance="@style/TextAppearance.AppCompat.Medium" />
 

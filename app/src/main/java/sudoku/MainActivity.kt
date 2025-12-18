@@ -6,6 +6,8 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
+import android.view.animation.Animation
+import android.view.animation.AnimationUtils
 import android.widget.Button
 import android.widget.CheckBox
 import android.widget.GridLayout
@@ -15,6 +17,7 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import com.example.sudoku.R
 import logic.SudokuGenerator
 import model.SudokuBoard
@@ -27,6 +30,7 @@ import utils.GameTimer
 import java.util.Locale
 import androidx.core.content.edit
 import androidx.core.view.isVisible
+import kotlin.math.roundToInt
 
 class MainActivity : AppCompatActivity() {
 
@@ -59,6 +63,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var menuLivesCheckbox: CheckBox
     private lateinit var livesTextView: TextView
     private lateinit var loseOverlay: View
+    private lateinit var heartBeatAnimation: Animation
 
     private lateinit var prefs: SharedPreferences
     private lateinit var stateManager: GameStateManager
@@ -168,6 +173,8 @@ class MainActivity : AppCompatActivity() {
         menuHelpButton.setOnClickListener { showRulesDialog() }
         menuLivesCheckbox.isChecked = livesModeEnabled
         menuLivesCheckbox.setOnCheckedChangeListener { _, isChecked ->
+            heartBeatAnimation.reset()
+            menuLivesCheckbox.startAnimation(heartBeatAnimation)
             livesModeEnabled = isChecked
             prefs.edit { putBoolean("lives_mode", livesModeEnabled) }
             gameController.setLivesMode(livesModeEnabled)
@@ -191,6 +198,8 @@ class MainActivity : AppCompatActivity() {
 
         updateBestResultsUI()
         updateContinueButtonState()
+
+        heartBeatAnimation = AnimationUtils.loadAnimation(this, R.anim.heart_pulse)
     }
 
     private fun openGameScreen() {
@@ -300,7 +309,7 @@ class MainActivity : AppCompatActivity() {
         val titles = items.map { formatDifficulty(it) }.toTypedArray()
         val selectedIndex = items.indexOf(selectedDifficulty)
 
-        AlertDialog.Builder(this)
+        val dialog = AlertDialog.Builder(this)
             .setTitle("Выбор сложности")
             .setSingleChoiceItems(titles, selectedIndex) { dialog, which ->
                 selectedDifficulty = items[which]
@@ -310,19 +319,23 @@ class MainActivity : AppCompatActivity() {
             }
             .setNegativeButton("Отмена", null)
             .show()
+
+        styleDialogButtons(dialog)
     }
 
 
     @SuppressLint("UseKtx")
     private fun showRulesDialog() {
         val view = LayoutInflater.from(this).inflate(R.layout.dialog_rules, null)
-        AlertDialog.Builder(this)
+        val dialog = AlertDialog.Builder(this)
             .setTitle("Правила игры")
             .setView(view)
             .setPositiveButton("Понятно") { dialog, _ ->
                 dialog.dismiss()
             }
             .show()
+
+        styleDialogButtons(dialog)
     }
 
     private fun handleBackNavigation() {
@@ -330,7 +343,7 @@ class MainActivity : AppCompatActivity() {
             finish()
             return
         }
-        AlertDialog.Builder(this)
+        val dialog = AlertDialog.Builder(this)
             .setMessage("Вы действительно хотите выйти в главное меню? Прогресс можно сохранить.")
             .setPositiveButton("Выйти без сохранения") { _, _ ->
                 stateManager.clear()
@@ -342,8 +355,9 @@ class MainActivity : AppCompatActivity() {
                 exitToMenu()
             }
             .show()
-    }
 
+        styleDialogButtons(dialog)
+    }
     private fun exitToMenu() {
         pauseTimer()
         sudokuGrid.clearAllNotes()
@@ -482,4 +496,30 @@ class MainActivity : AppCompatActivity() {
         continueGameButton.isEnabled = hasState
         continueGameButton.alpha = if (hasState) 1f else 0.5f
     }
+    private fun styleDialogButtons(dialog: AlertDialog) {
+        val margin = 8.dpToPx()
+        val params = LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT
+        ).apply { setMargins(margin, margin / 2, margin, margin / 2) }
+        val paddingHorizontal = 12.dpToPx()
+        val paddingVertical = 8.dpToPx()
+        val textColor = ContextCompat.getColor(this, android.R.color.white)
+
+        listOf(
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE),
+            dialog.getButton(AlertDialog.BUTTON_NEGATIVE),
+            dialog.getButton(AlertDialog.BUTTON_NEUTRAL)
+        ).forEach { button ->
+            button?.let {
+                it.layoutParams = params
+                it.setBackgroundResource(R.drawable.menu_button_background)
+                it.setTextColor(textColor)
+                it.setPadding(paddingHorizontal, paddingVertical, paddingHorizontal, paddingVertical)
+                it.isAllCaps = false
+            }
+        }
+    }
+
+    private fun Int.dpToPx(): Int = (this * resources.displayMetrics.density).roundToInt()
 }

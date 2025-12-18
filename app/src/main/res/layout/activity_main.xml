@@ -154,7 +154,7 @@
 
             <Button
                 android:id="@+id/difficultyButton"
-                android:layout_width="257dp"
+                android:layout_width="200dp"
                 android:layout_height="wrap_content"
                 android:layout_marginEnd="8dp"
                 android:background="@drawable/menu_button_background"
@@ -164,9 +164,17 @@
 
             <CheckBox
                 android:id="@+id/menuLivesCheckbox"
-                android:layout_width="wrap_content"
+                android:layout_width="138dp"
                 android:layout_height="wrap_content"
-                android:text="Жизни" />
+                android:button="@drawable/heart_checkbox_selector"
+                android:gravity="center_vertical"
+                android:paddingStart="8dp"
+                android:paddingTop="10dp"
+                android:paddingEnd="20dp"
+                android:paddingBottom="10dp"
+                android:text="Жизни"
+                android:textColor="#636363"
+                android:textStyle="bold" />
         </LinearLayout>
 
     </LinearLayout>
