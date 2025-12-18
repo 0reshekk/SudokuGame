@@ -209,7 +209,7 @@
                     android:layout_height="40dp"
                     android:background="@android:color/transparent"
                     android:contentDescription="Назад"
-                    android:src="@android:drawable/ic_menu_revert"
+                    android:src="?attr/homeAsUpIndicator"
                     app:layout_constraintBottom_toBottomOf="parent"
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintTop_toTopOf="parent" />
@@ -402,6 +402,7 @@
                     android:id="@+id/resumeButton"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:background="@drawable/notes_toggle_background"
                     android:text="ВЕРНУТЬСЯ К ИГРЕ" />
             </LinearLayout>
         </FrameLayout>
@@ -436,6 +437,7 @@
                     android:id="@+id/returnToMenuButton"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:background="@drawable/notes_toggle_background"
                     android:text="ВЕРНУТЬСЯ В ГЛАВНОЕ МЕНЮ" />
             </LinearLayout>
         </FrameLayout>
@@ -501,6 +503,7 @@
                     android:id="@+id/winOkButton"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:background="@drawable/notes_toggle_background"
                     android:text="ОК" />
             </LinearLayout>
         </FrameLayout>
