@@ -226,8 +226,12 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun formatDifficulty(difficulty: Difficulty): String {
-        return difficulty.name.lowercase(Locale.getDefault())
-            .replaceFirstChar { char -> char.titlecase(Locale.getDefault()) }
+        return when (difficulty) {
+            Difficulty.ЛЕГКИЙ -> "Простая"
+            Difficulty.СРЕДНИЙ -> "Средняя"
+            Difficulty.СЛОЖНЫЙ -> "Сложная"
+            Difficulty.ЭКСТРИМ -> "Экстрим"
+        }
     }
 
     private fun startNewGame() {

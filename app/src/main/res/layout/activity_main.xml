@@ -58,7 +58,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:padding="8dp"
-                    android:text="Легкая" />
+                    android:text="Простая" />
                 <TextView
                     android:id="@+id/bestEasy"
                     android:layout_width="wrap_content"
@@ -148,30 +148,34 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:gravity="center"
             android:orientation="horizontal"
             android:paddingTop="16dp">
 
             <Button
                 android:id="@+id/difficultyButton"
-                android:layout_width="200dp"
+                android:layout_width="216dp"
                 android:layout_height="wrap_content"
-                android:layout_marginEnd="8dp"
+                android:layout_marginEnd="2dp"
                 android:background="@drawable/menu_button_background"
                 android:contentDescription="Сложность"
                 android:text="Сложность"
                 android:textColor="@android:color/white" />
 
+            <TextView
+                android:id="@+id/hz"
+                android:layout_width="10dp"
+                android:layout_height="20dp"
+                android:layout_marginEnd="15dp"
+                android:background="#F8F8F8"
+                android:text="ᅠ" />
+
             <CheckBox
                 android:id="@+id/menuLivesCheckbox"
-                android:layout_width="138dp"
+                android:layout_width="100dp"
                 android:layout_height="wrap_content"
                 android:button="@drawable/heart_checkbox_selector"
                 android:gravity="center_vertical"
-                android:paddingStart="8dp"
-                android:paddingTop="10dp"
-                android:paddingEnd="20dp"
-                android:paddingBottom="10dp"
+                android:paddingStart="10dp"
                 android:text="Жизни"
                 android:textColor="#636363"
                 android:textStyle="bold" />
