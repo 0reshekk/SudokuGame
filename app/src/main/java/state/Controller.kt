@@ -99,9 +99,9 @@ class GameController(
         val beforeNotes = grid.getNotes(selectedRow, selectedCol)
 
         if (notesMode) {
-            when {
-                index in 0..8 -> grid.setNumber(selectedRow, selectedCol, index + 1)
-                index == 9 -> grid.clearNotes(selectedRow, selectedCol)
+            when (index) {
+                in 0..8 -> grid.setNumber(selectedRow, selectedCol, index + 1)
+                9 -> grid.clearNotes(selectedRow, selectedCol)
             }
         } else {
             val value = if (index == 9) 0 else index + 1
@@ -202,4 +202,24 @@ data class GameMetrics(
     val remainingCells: Int,
     val digitCounts: IntArray,
     val isBoardFull: Boolean
-)
+) {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as GameMetrics
+
+        if (remainingCells != other.remainingCells) return false
+        if (isBoardFull != other.isBoardFull) return false
+        if (!digitCounts.contentEquals(other.digitCounts)) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = remainingCells
+        result = 31 * result + isBoardFull.hashCode()
+        result = 31 * result + digitCounts.contentHashCode()
+        return result
+    }
+}

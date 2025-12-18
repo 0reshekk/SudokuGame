@@ -2,11 +2,11 @@ package model
 
 class SudokuBoard {
 
-    val SIZE = 9
-    private val board = Array(SIZE) { IntArray(SIZE) }
-    private val solutionBoard = Array(SIZE) { IntArray(SIZE) }
-    private val fixed = Array(SIZE) { BooleanArray(SIZE) }
-    private val autoFixed = Array(SIZE) { BooleanArray(SIZE) }
+    val size = 9
+    private val board = Array(size) { IntArray(size) }
+    private val solutionBoard = Array(size) { IntArray(size) }
+    private val fixed = Array(size) { BooleanArray(size) }
+    private val autoFixed = Array(size) { BooleanArray(size) }
 
     fun getCell(row: Int, col: Int): Int = board[row][col]
 
@@ -29,7 +29,7 @@ class SudokuBoard {
     }
 
     fun isValid(row: Int, col: Int, num: Int): Boolean {
-        for (i in 0 until SIZE) {
+        for (i in 0 until size) {
             if (i != col && board[row][i] == num) return false
             if (i != row && board[i][col] == num) return false
         }
@@ -44,8 +44,8 @@ class SudokuBoard {
     }
 
     fun clear() {
-        for (i in 0 until SIZE) {
-            for (j in 0 until SIZE) {
+        for (i in 0 until size) {
+            for (j in 0 until size) {
                 board[i][j] = 0
                 solutionBoard[i][j] = 0
                 fixed[i][j] = false
@@ -55,18 +55,18 @@ class SudokuBoard {
     }
 
     fun setSolution(solution: Array<IntArray>) {
-        for (i in 0 until SIZE) for (j in 0 until SIZE) solutionBoard[i][j] = solution[i][j]
+        for (i in 0 until size) for (j in 0 until size) solutionBoard[i][j] = solution[i][j]
     }
 
     fun getSolution(row: Int, col: Int): Int = solutionBoard[row][col]
 
-    fun getBoardCopy(): Array<IntArray> = Array(SIZE) { row -> board[row].clone() }
+    fun getBoardCopy(): Array<IntArray> = Array(size) { row -> board[row].clone() }
 
-    fun getSolutionCopy(): Array<IntArray> = Array(SIZE) { row -> solutionBoard[row].clone() }
+    fun getSolutionCopy(): Array<IntArray> = Array(size) { row -> solutionBoard[row].clone() }
 
-    fun getFixedCopy(): Array<BooleanArray> = Array(SIZE) { row -> fixed[row].clone() }
+    fun getFixedCopy(): Array<BooleanArray> = Array(size) { row -> fixed[row].clone() }
 
-    fun getAutoFixedCopy(): Array<BooleanArray> = Array(SIZE) { row -> autoFixed[row].clone() }
+    fun getAutoFixedCopy(): Array<BooleanArray> = Array(size) { row -> autoFixed[row].clone() }
 
     fun restoreState(
         boardData: Array<IntArray>,
@@ -74,8 +74,8 @@ class SudokuBoard {
         fixedData: Array<BooleanArray>,
         autoFixedData: Array<BooleanArray>
     ) {
-        for (i in 0 until SIZE) {
-            for (j in 0 until SIZE) {
+        for (i in 0 until size) {
+            for (j in 0 until size) {
                 board[i][j] = boardData.getOrNull(i)?.getOrNull(j) ?: 0
                 solutionBoard[i][j] = solutionData.getOrNull(i)?.getOrNull(j) ?: 0
                 fixed[i][j] = fixedData.getOrNull(i)?.getOrNull(j) ?: false

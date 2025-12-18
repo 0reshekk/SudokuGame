@@ -12,14 +12,13 @@ class SudokuGenerator(private val board: SudokuBoard) {
         board.clear()
 
         fillDiagonalBoxes()
-        solver.solve() // полностью решаем доску
+        solver.solve()
 
         // сохраняем решение
         board.setSolution(solver.getSolutionBoard())
-
         removeCells(81 - difficulty.clues)
 
-        // помечаем оставшиеся числа как фиксированные (givens)
+        // помечаем оставшиеся числа как фиксированные
         for (r in 0 until 9) {
             for (c in 0 until 9) {
                 if (board.getCell(r, c) != 0) {

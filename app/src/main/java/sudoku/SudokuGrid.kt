@@ -13,6 +13,7 @@ import android.widget.GridLayout
 import model.SudokuBoard
 import androidx.core.graphics.toColorInt
 import com.example.sudoku.R
+import model.SudokuNotes
 
 class SudokuGrid @JvmOverloads constructor(
     context: Context, attrs: AttributeSet? = null
@@ -23,7 +24,7 @@ class SudokuGrid @JvmOverloads constructor(
     private lateinit var board: SudokuBoard
     private var onCellSelectedListener: ((row: Int, col: Int) -> Unit)? = null
     private var isNotesMode = false
-    private val notes = Array(size) { Array(size) { mutableSetOf<Int>() } }
+    private val notes = SudokuNotes(size)
 
     private var selectedRow = -1
     private var selectedCol = -1
@@ -37,7 +38,7 @@ class SudokuGrid @JvmOverloads constructor(
 
     fun setSudokuBoard(board: SudokuBoard) {
         this.board = board
-        for (i in 0 until size) for (j in 0 until size) notes[i][j].clear()
+        notes.clearAll()
         highlightedDigit = -1
         updateUI()
     }
@@ -45,12 +46,6 @@ class SudokuGrid @JvmOverloads constructor(
     fun setNotesMode(enabled: Boolean) {
         isNotesMode = enabled
         updateUI()
-    }
-
-    fun toggleNote(row: Int, col: Int, number: Int) {
-        val noteSet = notes[row][col]
-        if (number in noteSet) noteSet.remove(number) else noteSet.add(number)
-        updateCellUI(row, col)
     }
 
     fun highlightDigit(digit: Int) {
@@ -106,20 +101,11 @@ class SudokuGrid @JvmOverloads constructor(
         }
     }
 
-    fun getNotesSnapshot(): Array<Array<Set<Int>>> {
-        return Array(size) { row ->
-            Array(size) { col -> notes[row][col].toSet() }
-        }
-    }
+    fun getNotesSnapshot(): Array<Array<Set<Int>>> = notes.snapshot()
 
     fun applyNotesSnapshot(notesSnapshot: Array<Array<Set<Int>>>) {
         if (!::board.isInitialized) return
-        for (i in 0 until size) {
-            for (j in 0 until size) {
-                notes[i][j].clear()
-                notes[i][j].addAll(notesSnapshot.getOrNull(i)?.getOrNull(j) ?: emptySet())
-            }
-        }
+        notes.applySnapshot(notesSnapshot)
         updateUI()
     }
     fun applyState(row: Int, col: Int, value: Int, notesSet: Set<Int>) {
@@ -128,8 +114,7 @@ class SudokuGrid @JvmOverloads constructor(
         if (board.isFixed(row, col)) return
 
         board.setCell(row, col, value)
-        notes[row][col].clear()
-        notes[row][col].addAll(notesSet)
+        notes.set(row, col, notesSet)
         updateCellUI(row, col)
     }
 
@@ -147,7 +132,8 @@ class SudokuGrid @JvmOverloads constructor(
         val isSelected = row == selectedRow && col == selectedCol
         val isRelated = selectedRow >= 0 && selectedCol >= 0 && !isSelected &&
                 (row == selectedRow || col == selectedCol || (row / 3 == selectedRow / 3 && col / 3 == selectedCol / 3))
-        val isHighlighted = highlightedDigit != -1 && (value == highlightedDigit || highlightedDigit in notes[row][col])
+        val cellNotes = notes.get(row, col)
+        val isHighlighted = highlightedDigit != -1 && (value == highlightedDigit || highlightedDigit in cellNotes)
 
         if (value != 0) {
             cell.setText(value.toString())
@@ -162,8 +148,8 @@ class SudokuGrid @JvmOverloads constructor(
                 }
             )
             if (!isFixed && !hasError && value == solutionValue) board.markAutoFixed(row, col)
-        } else if (notes[row][col].isNotEmpty()) {
-            cell.setText(formatNotes3x3(notes[row][col].sorted()))
+        } else if (cellNotes.isNotEmpty()) {
+            cell.setText(formatNotes3x3(cellNotes.sorted()))
             cell.textSize = 11f
             cell.setTypeface(Typeface.MONOSPACE, Typeface.NORMAL)
             cell.setLineSpacing(0f, 0.9f)
@@ -182,6 +168,7 @@ class SudokuGrid @JvmOverloads constructor(
             else -> cell.setBackgroundResource(R.drawable.cell_background_normal)
         }
     }
+
 
     private fun formatNotes3x3(notesList: List<Int>): CharSequence {
         val builder = SpannableStringBuilder()
@@ -218,14 +205,14 @@ class SudokuGrid @JvmOverloads constructor(
         if (board.isFixed(row, col)) return
 
         if (isNotesMode) {
-            if (number == 0) notes[row][col].clear() else toggleNote(row, col, number)
+            if (number == 0) notes.clear(row, col) else notes.toggle(row, col, number)
         } else {
             if (number == 0) {
                 board.setCell(row, col, 0)
             } else {
                 board.setCell(row, col, number)
-                notes[row][col].clear()
-                removeNotesForNumber(row, col, number)
+                notes.clear(row, col)
+                notes.removeRelatedNotes(row, col, number)
             }
             if (row == selectedRow && col == selectedCol) {
                 highlightDigit(number)
@@ -234,34 +221,15 @@ class SudokuGrid @JvmOverloads constructor(
         updateUI()
     }
 
-    private fun removeNotesForNumber(row: Int, col: Int, number: Int) {
-        for (i in 0 until size) {
-            for (j in 0 until size) {
-                val sameRow = i == row
-                val sameCol = j == col
-                val sameBox = i / 3 == row / 3 && j / 3 == col / 3
-                if ((sameRow || sameCol || sameBox) && !(i == row && j == col)) {
-                    notes[i][j].remove(number)
-                }
-            }
-        }
-    }
     fun clearNotes(row: Int, col: Int) {
         if (row !in 0 until size || col !in 0 until size) return
-        notes[row][col].clear()
+        notes.clear(row, col)
         updateUI()
     }
-    fun getNotes(row: Int, col: Int): Set<Int> {
-        if (row !in 0 until size || col !in 0 until size) return emptySet()
-        return notes[row][col].toSet()
-    }
+    fun getNotes(row: Int, col: Int): Set<Int> = notes.get(row, col)
 
     fun clearAllNotes() {
-        for (i in 0 until size) {
-            for (j in 0 until size) {
-                notes[i][j].clear()
-            }
-        }
+        notes.clearAll()
         updateUI()
     }
 }
