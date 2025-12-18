@@ -11,13 +11,10 @@ import android.widget.CheckBox
 import android.widget.GridLayout
 import android.widget.ImageButton
 import android.widget.LinearLayout
-import android.widget.RadioButton
-import android.widget.RadioGroup
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.app.AppCompatDelegate
 import com.example.sudoku.R
 import logic.SudokuGenerator
 import model.SudokuBoard
@@ -51,7 +48,6 @@ class MainActivity : AppCompatActivity() {
     private lateinit var winRecordText: TextView
     private lateinit var winLivesText: TextView
     private lateinit var helpButton: ImageButton
-    private lateinit var settingsButton: ImageButton
     private lateinit var pauseButton: ImageButton
     private var notesModeEnabled = false
     private lateinit var menuContainer: LinearLayout
@@ -59,7 +55,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var startGameButton: Button
     private lateinit var continueGameButton: Button
     private lateinit var difficultyButton: Button
-    private lateinit var menuSettingsButton: Button
+    private lateinit var menuHelpButton: Button
+    private lateinit var menuLivesCheckbox: CheckBox
     private lateinit var livesTextView: TextView
     private lateinit var loseOverlay: View
 
@@ -67,7 +64,6 @@ class MainActivity : AppCompatActivity() {
     private lateinit var stateManager: GameStateManager
     private lateinit var gameTimer: GameTimer
     private var selectedDifficulty: Difficulty = Difficulty.ЛЕГКИЙ
-    private var hasReadRules: Boolean = false
     private var livesModeEnabled: Boolean = true
     private var isPaused: Boolean = false
 
@@ -77,16 +73,8 @@ class MainActivity : AppCompatActivity() {
         prefs = getSharedPreferences("sudoku_prefs", MODE_PRIVATE)
         stateManager = GameStateManager(prefs)
         gameTimer = GameTimer { seconds -> timerTextView.text = formatTime(seconds) }
-
-        AppCompatDelegate.setDefaultNightMode(
-            prefs.getInt(
-                "theme_mode",
-                AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM
-            )
-        )
         setContentView(R.layout.activity_main)
 
-        hasReadRules = prefs.getBoolean("help_read", false)
         livesModeEnabled = prefs.getBoolean("lives_mode", true)
         selectedDifficulty = Difficulty.valueOf(
             prefs.getString("selected_difficulty", Difficulty.ЛЕГКИЙ.name) ?: Difficulty.ЛЕГКИЙ.name
@@ -114,14 +102,14 @@ class MainActivity : AppCompatActivity() {
         winRecordText = findViewById(R.id.winRecordText)
         winLivesText = findViewById(R.id.winLivesText)
         helpButton = findViewById(R.id.helpButton)
-        settingsButton = findViewById(R.id.settingsButton)
         pauseButton = findViewById(R.id.pauseButton)
         menuContainer = findViewById(R.id.menuContainer)
         gameContainer = findViewById(R.id.gameContainer)
         startGameButton = findViewById(R.id.startGameButton)
         continueGameButton = findViewById(R.id.continueGameButton)
         difficultyButton = findViewById(R.id.difficultyButton)
-        menuSettingsButton = findViewById(R.id.menuSettingsButton)
+        menuHelpButton = findViewById(R.id.menuHelpButton)
+        menuLivesCheckbox = findViewById(R.id.menuLivesCheckbox)
         livesTextView = findViewById(R.id.livesText)
         loseOverlay = findViewById(R.id.loseOverlay)
 
@@ -177,7 +165,15 @@ class MainActivity : AppCompatActivity() {
         continueGameButton.setOnClickListener { continueSavedGame() }
 
         difficultyButton.setOnClickListener { showDifficultyDialog() }
-        menuSettingsButton.setOnClickListener { showSettingsDialog() }
+        menuHelpButton.setOnClickListener { showRulesDialog() }
+        menuLivesCheckbox.isChecked = livesModeEnabled
+        menuLivesCheckbox.setOnCheckedChangeListener { _, isChecked ->
+            livesModeEnabled = isChecked
+            prefs.edit { putBoolean("lives_mode", livesModeEnabled) }
+            gameController.setLivesMode(livesModeEnabled)
+            updateLivesUI()
+            saveGameState()
+        }
         updateDifficultyLabel()
 
         findViewById<ImageButton>(R.id.backToMenuButton).setOnClickListener {
@@ -191,9 +187,7 @@ class MainActivity : AppCompatActivity() {
             exitToMenu()
         }
         winOkButton.setOnClickListener { exitToMenu() }
-        settingsButton.setOnClickListener { showSettingsDialog() }
         helpButton.setOnClickListener { showRulesDialog() }
-        helpButton.visibility = if (hasReadRules) View.GONE else View.VISIBLE
 
         updateBestResultsUI()
         updateContinueButtonState()
@@ -247,6 +241,7 @@ class MainActivity : AppCompatActivity() {
         openGameScreen()
         selectedDifficulty = saved.difficulty
         livesModeEnabled = saved.livesModeEnabled
+        menuLivesCheckbox.isChecked = livesModeEnabled
         updateDifficultyLabel()
         val metrics = gameController.restoreFrom(saved)
         resetOverlays()
@@ -317,65 +312,14 @@ class MainActivity : AppCompatActivity() {
             .show()
     }
 
-    private fun showSettingsDialog() {
-        val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_settings, null)
-        val themeGroup = dialogView.findViewById<RadioGroup>(R.id.themeGroup)
-        val themeLight = dialogView.findViewById<RadioButton>(R.id.themeLight)
-        val themeDark = dialogView.findViewById<RadioButton>(R.id.themeDark)
-        val livesCheckbox = dialogView.findViewById<CheckBox>(R.id.livesModeCheckbox)
-        val showRulesButton = dialogView.findViewById<Button>(R.id.showRulesButton)
-
-        when (prefs.getInt("theme_mode", AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)) {
-            AppCompatDelegate.MODE_NIGHT_NO -> themeLight.isChecked = true
-            AppCompatDelegate.MODE_NIGHT_YES -> themeDark.isChecked = true
-        }
-
-        livesCheckbox.isChecked = livesModeEnabled
-        showRulesButton.visibility = if (hasReadRules) View.VISIBLE else View.GONE
-
-        val dialog = AlertDialog.Builder(this)
-            .setTitle("Настройки")
-            .setView(dialogView)
-            .setPositiveButton("Сохранить") { _, _ ->
-                val selectedMode = when (themeGroup.checkedRadioButtonId) {
-                    R.id.themeLight -> AppCompatDelegate.MODE_NIGHT_NO
-                    R.id.themeDark -> AppCompatDelegate.MODE_NIGHT_YES
-                    else -> AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM
-                }
-                prefs.edit { putInt("theme_mode", selectedMode) }
-                AppCompatDelegate.setDefaultNightMode(selectedMode)
-
-                livesModeEnabled = livesCheckbox.isChecked
-                gameController.setLivesMode(livesModeEnabled)
-                prefs.edit { putBoolean("lives_mode", livesModeEnabled) }
-                updateLivesUI()
-                saveGameState()
-                Toast.makeText(this, "Настройки сохранены", Toast.LENGTH_SHORT).show()
-            }
-            .setNegativeButton("Отмена", null)
-            .create()
-
-        showRulesButton.setOnClickListener {
-            showRulesDialog()
-            dialog.dismiss()
-        }
-
-        dialog.show()
-    }
 
     @SuppressLint("UseKtx")
     private fun showRulesDialog() {
+        val view = LayoutInflater.from(this).inflate(R.layout.dialog_rules, null)
         AlertDialog.Builder(this)
             .setTitle("Правила игры")
-            .setMessage(
-                "Заполните сетку 9x9 цифрами от 1 до 9 так, чтобы каждая цифра встречалась в каждой строке, столбце и каждом блоке 3x3 только один раз. Используйте заметки для черновых чисел и стирайте ошибочные варианты."
-            )
+            .setView(view)
             .setPositiveButton("Понятно") { dialog, _ ->
-                if (!hasReadRules) {
-                    hasReadRules = true
-                    prefs.edit { putBoolean("help_read", true) }
-                    helpButton.visibility = View.GONE
-                }
                 dialog.dismiss()
             }
             .show()

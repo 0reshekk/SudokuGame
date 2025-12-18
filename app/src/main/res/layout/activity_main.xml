@@ -20,11 +20,20 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
+        <Button
+            android:id="@+id/menuHelpButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="200dp"
+            android:background="@drawable/notes_toggle_background"
+            android:text="Справка"
+            android:textColor="@color/image_buttons" />
+
         <TextView
             android:id="@+id/menuTitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:paddingBottom="12dp"
+            android:paddingBottom="50dp"
             android:text="Судоку"
             android:textAppearance="@style/TextAppearance.AppCompat.Large"
             android:textStyle="bold" />
@@ -33,7 +42,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:paddingBottom="8dp"
-            android:text="Лучшие результаты"
+            android:text="Лучшие результаты по сложности"
             android:textAppearance="@style/TextAppearance.AppCompat.Medium"
             android:textStyle="bold" />
 
@@ -49,7 +58,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:padding="8dp"
-                    android:text="Легкий" />
+                    android:text="Легкая" />
                 <TextView
                     android:id="@+id/bestEasy"
                     android:layout_width="wrap_content"
@@ -64,7 +73,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:padding="8dp"
-                    android:text="Средний" />
+                    android:text="Средняя" />
                 <TextView
                     android:id="@+id/bestMedium"
                     android:layout_width="wrap_content"
@@ -79,7 +88,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:padding="8dp"
-                    android:text="Сложный" />
+                    android:text="Сложная" />
                 <TextView
                     android:id="@+id/bestHard"
                     android:layout_width="wrap_content"
@@ -114,10 +123,10 @@
 
             <Button
                 android:id="@+id/continueGameButton"
-                android:layout_width="0dp"
+                android:layout_width="8dp"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
                 android:layout_marginEnd="8dp"
+                android:layout_weight="1"
                 android:background="@drawable/menu_button_background"
                 android:contentDescription="Продолжить"
                 android:text="Продолжить"
@@ -125,34 +134,41 @@
 
             <Button
                 android:id="@+id/startGameButton"
-                android:layout_width="0dp"
+                android:layout_width="6dp"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
                 android:layout_marginEnd="8dp"
+                android:layout_weight="1"
                 android:background="@drawable/menu_button_background"
                 android:contentDescription="Новая игра"
                 android:text="Новая игра"
                 android:textColor="@android:color/white" />
 
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:orientation="horizontal"
+            android:paddingTop="16dp">
+
             <Button
                 android:id="@+id/difficultyButton"
-                android:layout_width="0dp"
+                android:layout_width="257dp"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
+                android:layout_marginEnd="8dp"
                 android:background="@drawable/menu_button_background"
                 android:contentDescription="Сложность"
                 android:text="Сложность"
                 android:textColor="@android:color/white" />
+
+            <CheckBox
+                android:id="@+id/menuLivesCheckbox"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Жизни" />
         </LinearLayout>
 
-        <Button
-            android:id="@+id/menuSettingsButton"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:background="@drawable/menu_button_background"
-            android:text="Настройки"
-            android:textColor="@android:color/white" />
     </LinearLayout>
 
     <FrameLayout
@@ -234,17 +250,6 @@
                         android:textAppearance="@style/TextAppearance.AppCompat.Small"
                         android:visibility="gone" />
                 </LinearLayout>
-
-                <ImageButton
-                    android:id="@+id/settingsButton"
-                    android:layout_width="40dp"
-                    android:layout_height="40dp"
-                    android:background="@android:color/transparent"
-                    android:contentDescription="Настройки"
-                    android:src="@android:drawable/ic_menu_manage"
-                    app:layout_constraintBottom_toBottomOf="parent"
-                    app:layout_constraintEnd_toStartOf="@id/helpButton"
-                    app:layout_constraintTop_toTopOf="parent" />
 
                 <ImageButton
                     android:id="@+id/helpButton"

@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:padding="16dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="308dp"
+            android:layout_marginBottom="12dp"
+            android:background="@drawable/rules_photo_backround"
+            android:elevation="4dp"
+            android:padding="12dp">
+
+            <ImageView
+                android:layout_width="345dp"
+                android:layout_height="291dp"
+                android:adjustViewBounds="true"
+                android:contentDescription="Иллюстрация игры"
+                android:scaleType="centerCrop"
+                android:src="@mipmap/ic_banner_rules" />
+        </FrameLayout>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="8dp"
+            android:text="Заполните сетку 9x9 цифрами от 1 до 9 так, чтобы в каждой строке, столбце и каждом квадрате 3x3 каждая цифра встречалась только один раз. Используйте заметки для черновых чисел и стирайте ошибочные варианты."
+            android:textAppearance="@style/TextAppearance.AppCompat.Medium" />
+
+    </LinearLayout>
+</ScrollView>
